@@ -76,6 +76,7 @@ while [ $# -gt 0 ]; do
         -t)     MODE="$2"; shift; ;;
         -z)     ZONE="$2" shift; ;;
         -p)     PROJECT="$2"; shift; ;;
+        -m)     MACHINE="$2"; shift; ;;
         -n)     NETWORK="$2"; shift; ;;
         -o)     OS="$2"; shift; ;;
         -F)     FOLLOW=1; ;;
