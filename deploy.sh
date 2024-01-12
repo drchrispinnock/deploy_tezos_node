@@ -71,16 +71,15 @@ which gcloud >/dev/null 2>&1
 while [ $# -gt 0 ]; do
         case $1 in
         -d)     SIZE="$2"; shift ;;
-        -s)     SNAPREG="$2"; shift; ;;
-        -m)     MACHINE="$2"; shift; ;;
-        -t)     MODE="$2"; shift; ;;
-        -z)     ZONE="$2" shift; ;;
-        -p)     PROJECT="$2"; shift; ;;
         -m)     MACHINE="$2"; shift; ;;
         -n)     NETWORK="$2"; shift; ;;
         -o)     OS="$2"; shift; ;;
-        -F)     FOLLOW=1; ;;
+        -p)     PROJECT="$2"; shift; ;;
+        -s)     SNAPREG="$2"; shift; ;;
+        -t)     MODE="$2"; shift; ;;
         -v)     VERS="$2"; shift; ;;
+        -z)     ZONE="$2" shift; ;;
+        -F)     FOLLOW=1; ;;
         -*)     usage; ;;
         *)      break; # rest of args are targets
         esac
