@@ -3,8 +3,12 @@
 # Deploy a Tezos node on GCP
 #
 
+# Externals
+#
 VERS=19.0rc1
 REV=1
+GCLOUDSITE="https://cloud.google.com/sdk/docs/install"
+PKGSITE="https://pkgbeta.tzinit.org"
 
 warn() {
     echo "$1" >&2
@@ -35,9 +39,6 @@ usage() {
 
 # Defaults
 #
-GCLOUDSITE="https://XXX"
-PKGSITE="https://pkgbeta.tzinit.org"
-
 TMPLOG=`mktemp /tmp/_deployXXXXXX`
 
 HELPERSCRIPT="_helper.sh"
