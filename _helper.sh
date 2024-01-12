@@ -12,17 +12,19 @@ SNAPREG=eu
 MODE=rolling
 NETWORK=mainnet
 TEZTNETS=https://teztnets.com
+VER="19.0rc1-1"
 
 NODEHOME=/var/tezos/node # XXX in later packages this will change
 
-CLIENTPKG="octez-client_19.0rc1-1_amd64.deb" # XXX
-NODEPKG="octez-node_19.0rc1-1_amd64.deb" # XXX
-
+[ ! -z "$6" ] && VER="$6" 
 [ ! -z "$5" ] && OS="$5"
 [ ! -z "$4" ] && PKGSITE="$4"
 [ ! -z "$3" ] && SNAPREG="$3"
 [ ! -z "$2" ] && MODE="$2"
 [ ! -z "$1" ] && NETWORK="$1"
+
+CLIENTPKG="octez-client_${VER}_amd64.deb" 
+NODEPKG="octez-node_${VER}_amd64.deb"
 
 # Snapshot service
 #
@@ -35,7 +37,7 @@ SNAPSHOTURL="https://snapshot.$SNAPREG.tzinit.org/$NETWORK/$MODE"
 #
 NETWORKURL="$NETWORK"
 
-if [ "$NETWORK" != "mainnet "] && [ "$NETWORK" != "ghostnet" ]; then
+if [ "$NETWORK" != "mainnet" ] && [ "$NETWORK" != "ghostnet" ]; then
     # Test network
     #
     NETWORKURL="$TEZTNETS/$NETWORK"
@@ -66,10 +68,11 @@ mkdir -p $NODEHOME
 chown tezos:tezos $NODEHOME
 if [ $MODE = "archive" ]; then
     echo "===> Fetching and decompressing archive"
-
-    wget -O - ${SNAPSHOTURL} | lz4cat | tar xf -
+    cd $NODEHOME
+    wget -nv -O - ${SNAPSHOTURL} | lz4cat | tar xvf -
 
     chown tezos:tezos -R $NODEHOME
+    cd 
 fi
 
 echo "===> Configuring node"
@@ -81,7 +84,7 @@ su - tezos -c "octez-node config init --data-dir ${NODEHOME} \
 
 if [ $MODE != "archive" ] ; then
     echo "===> Fetching Snapshot"
-    wget ${SNAPSHOTURL} -O /var/tezos/__snapshot
+    wget -nv ${SNAPSHOTURL} -O /var/tezos/__snapshot
     su - tezos -c "octez-node snapshot import /var/tezos/__snapshot --data-dir $NODEHOME"
     rm -f /var/tezos/__snapshot
     if [ ! -d $NODEHOME/context ]; then

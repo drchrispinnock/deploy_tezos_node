@@ -3,6 +3,9 @@
 # Deploy a Tezos node on GCP
 #
 
+VERS=19.0rc1
+REV=1
+
 warn() {
     echo "$1" >&2
 }
@@ -13,7 +16,7 @@ leave() {
 }
 
 usage() {
-    leave "Usage: $0 -p project -z zone [...options...] name
+    leave "Usage: $0 -p project -z zone [...options...] [name]
     where options are:
         -p project - specify the GCP project to use (mandatory)
         -z zone    - specify the GCP zone to use (mandatory) 
@@ -25,8 +28,9 @@ usage() {
         -o OS      - GCP name for OS (defaults to debian-12)
         -v ver     - version of Octez
         -F         - follow the installation log
+        -c         - CLI options to give to the node
     and
-        name       - the name of the node" 
+        name       - the name of the node (or we construct one)" 
 }
 
 # Defaults
@@ -71,6 +75,7 @@ which gcloud >/dev/null 2>&1
 while [ $# -gt 0 ]; do
         case $1 in
         -d)     SIZE="$2"; shift ;;
+        -c)     CLI="$2"; echo "Warning -c not implemented yet"; shift ;;
         -m)     MACHINE="$2"; shift; ;;
         -n)     NETWORK="$2"; shift; ;;
         -o)     OS="$2"; shift; ;;
@@ -85,8 +90,9 @@ while [ $# -gt 0 ]; do
         esac
         shift
 done
-[ -z "$1" ] && usage
-NAME="$1"
+
+NAME="tezos-node-$NETWORK-$MODE"
+[ ! -z "$1" ] && NAME="$1"
 
 [ -z "$ZONE" ] && leave "Zone must be specified with -z"
 [ -p "$PROJECT" ] && leave "Project must be specified with -p"
@@ -171,7 +177,7 @@ gcloud compute scp ${PROJECTCLI} ${ZONECLI} ${HELPERSCRIPT} \
             ${NAME}:/tmp/setup.sh
 
 gcloud compute ssh ${PROJECTCLI} ${ZONECLI} \
-    ${NAME} --command "nohup sudo sh /tmp/setup.sh ${NETWORK} ${MODE} ${SNAPREG} ${PKGSITE} ${OS} > /tmp/install.log 2>&1 &"
+    ${NAME} --command "nohup sudo sh /tmp/setup.sh ${NETWORK} ${MODE} ${SNAPREG} ${PKGSITE} ${OS} ${VERS}-${REV} > /tmp/install.log 2>&1 &"
 
 echo "===> Script running"
 rm -f "$TMPLOG"
