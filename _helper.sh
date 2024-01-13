@@ -79,7 +79,7 @@ echo "===> Configuring node"
 su - tezos -c "octez-node config init --data-dir ${NODEHOME} \
                         --network=${NETWORKURL} \
                         --history-mode=${MODE} \
-                        --rpc-addr='127.0.0.0:8732' \
+                        --rpc-addr='127.0.0.1:8732' \
                         --net-addr='[::]:9732'"
 
 if [ $MODE != "archive" ] ; then
