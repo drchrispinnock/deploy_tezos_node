@@ -68,7 +68,6 @@ while [ ! -z "$HOSTLIST" ]; do
 			echo "===> Decommissioning $host"
 			gcloud compute instances delete --quiet --project=${PROJECT} --zone=${ZONE} $host >/dev/null 2>&1
 			gcloud compute firewall-rules delete --quiet $host-rpcallowlist --project=${PROJECT} >/dev/null 2>&1
-			rm -f log.$net.$mode.txt
 		fi
 
 	done
