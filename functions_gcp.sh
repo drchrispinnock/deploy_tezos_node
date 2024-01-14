@@ -45,9 +45,8 @@ type=projects/$2/zones/$3/diskTypes/pd-balanced \
 }
 
 create_firewall() {
-    echo "X $1 $2 $3"
     TMPLOG=`mktemp /tmp/_deployXXXXXX`
-    gcloud compute $2 firewall-rules create $1-rpcallowlist \
+    gcloud compute firewall-rules create $1-rpcallowlist  --project=$2 \
         --direction=INGRESS --priority=1000 --network=default --action=ALLOW \
         --rules=tcp:8732 --source-ranges="$3" > $TMPLOG 2>&1
         [ "$?" != "0" ] && cat "$TMPLOG" && echo "Cannot create filewall rule (may already exist)"
