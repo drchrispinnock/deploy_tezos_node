@@ -6,11 +6,13 @@
 #
 PROJECT=chris-temp-test-deploy-script
 ZONE=europe-west6-a
-NETWORKS="nairobinet oxfordnet ghostnet mainnet weeklynet"
+NETWORKS="nairobinet oxfordnet ghostnet mainnet"
 MODES="rolling full archive"
 cleanupscript="test_cleanup.sh"
 
 HOSTLIST=""
+
+export TEZOS_CLIENT_UNSAFE_DISABLE_DISCLAIMER=yes
 
 [ ! -z "$1" ] && NETWORKS="$1"
 [ ! -z "$2" ] && MODES="$2"
@@ -28,7 +30,7 @@ for net in ${NETWORKS}; do
 
 		echo "===> Deploying ${net}/${mode}"
 		host=test-$mode-$net
-		sh deploy.sh -z $ZONE -p $PROJECT -s eu -n ${net} -t $mode ${RPC} $host > log.$net.$mode.txt 2>&1
+		sh deploy.sh -W -z $ZONE -p $PROJECT -s eu -n ${net} -t $mode ${RPC} $host > log.$net.$mode.txt 2>&1
 		if [ "$?" != "0" ]; then
 			echo "FAILED: see log.$net.$mode.txt"
 		else
@@ -49,21 +51,29 @@ echo "rm -f $cleanupscript" >> $cleanupscript
 #
 while [ ! -z "$HOSTLIST" ]; do
 	NHOSTLIST=""
+	
+	echo "===> Sleeping..."
+	sleep 300 # 5 minutes
+
 	for host in $HOSTLIST; do
 		_IP=`gcloud compute instances describe --project=${PROJECT} --zone=${ZONE} ${host} | grep natIP | sed -e 's/.*natIP: //g'`
-		printf "Testing host $host ($_IP): "
+		printf "===> Testing host $host ($_IP): "
 		octez-client -E http://$_IP:8732 bootstrapped >/dev/null 2>&1
 		if [ "$?" != "0" ]; then
 			 echo "Cannot connect"
 			 NHOSTLIST="$NHOSTLIST $host"
 		else
 			echo "Bootstrapped"
+			octez-client -E http://$_IP:8732 bootstrapped
+			echo "===> Decommissioning $host"
+			gcloud compute instances delete --quiet --project=${PROJECT} --zone=${ZONE} $host >/dev/null 2>&1
+			gcloud compute firewall-rules delete --quiet $host-rpcallowlist --project=${PROJECT} >/dev/null 2>&1
+			rm -f log.$net.$mode.txt
 		fi
 
 	done
 	HOSTLIST="$NHOSTLIST"
-	echo "Sleeping..."
-	sleep 300 # 5 minutes
+
 done
 
 
