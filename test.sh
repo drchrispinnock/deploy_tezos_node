@@ -8,14 +8,35 @@ PROJECT=chris-temp-test-deploy-script
 ZONE=europe-west6-a
 NETWORKS="nairobinet oxfordnet ghostnet mainnet"
 MODES="rolling full archive"
+CLOUD=gcp
 cleanupscript="test_cleanup.$$.sh"
 
 HOSTLIST=""
 
 export TEZOS_CLIENT_UNSAFE_DISABLE_DISCLAIMER=yes
 
-[ ! -z "$1" ] && NETWORKS="$1"
-[ ! -z "$2" ] && MODES="$2"
+[ ! -z "$1" ] && CLOUD="$1"
+[ ! -z "$2" ] && NETWORKS="$2"
+[ ! -z "$3" ] && MODES="$3"
+
+# Multicloud TM
+#
+if [ ! -f "functions_$CLOUD.sh" ]; then
+	echo "Cloud Provider $CLOUD not supported - create functions_$CLOUD.sh"
+	exit 1
+fi
+source functions_$CLOUD.sh
+
+# Specific test parameters
+#
+[ "$CLOUD" = "gcp" ] && PROJECT=chris-temp-test-deploy-script && ZONE=europe-west6-a
+
+echo "===> Testing on $CLOUD"
+echo "Networks: $NETWORKS"
+echo "Modes:    $MODES"
+echo "Proj/Act: $PROJECT"
+echo "Zone:     $ZONE"
+sleep 2
 
 # Avoid publishing IP addresses in Git
 #
@@ -33,12 +54,12 @@ for net in ${NETWORKS}; do
 		sh deploy.sh -W -z $ZONE -p $PROJECT -s eu -n ${net} -t $mode ${RPC} $host > log.$net.$mode.txt 2>&1
 		if [ "$?" != "0" ]; then
 			echo "FAILED: see log.$net.$mode.txt"
+			echo "deploy.sh -W -z $ZONE -p $PROJECT -s eu -n ${net} -t $mode ${RPC} $host > log.$net.$mode.txt"
 		else
 			HOSTLIST="$HOSTLIST $host"
 		fi
 
-		echo "gcloud compute instances delete --quiet --project=${PROJECT} --zone=${ZONE} $host" >> $cleanupscript
-		echo "gcloud compute firewall-rules delete --quiet $host-rpcallowlist --project=${PROJECT}" >> $cleanupscript
+		print_ssh_details $PROJECT $ZONE $host yes >> $cleanupscript
 		echo "rm -f log.$net.$mode.txt" >> $cleanupscript
 
 	done
@@ -55,8 +76,9 @@ while [ ! -z "$HOSTLIST" ]; do
 	echo "===> Sleeping..."
 	sleep 300 # 5 minutes
 
+	TMP=`mktemp /tmp/_destroyXXXXXX`
 	for host in $HOSTLIST; do
-		_IP=`gcloud compute instances describe --project=${PROJECT} --zone=${ZONE} ${host} | grep natIP | sed -e 's/.*natIP: //g'`
+		_IP=$(getip $PROJECT $ZONE $host)
 		printf "===> Testing host $host ($_IP): "
 		octez-client -E http://$_IP:8732 bootstrapped >/dev/null 2>&1
 		if [ "$?" != "0" ]; then
@@ -66,8 +88,9 @@ while [ ! -z "$HOSTLIST" ]; do
 			echo "Bootstrapped"
 			octez-client -E http://$_IP:8732 bootstrapped
 			echo "===> Decommissioning $host"
-			gcloud compute instances delete --quiet --project=${PROJECT} --zone=${ZONE} $host >/dev/null 2>&1
-			gcloud compute firewall-rules delete --quiet $host-rpcallowlist --project=${PROJECT} >/dev/null 2>&1
+			print_ssh_details $PROJECT $ZONE $host yes > $TMP
+			source $TMP
+			rm -f $TMP
 		fi
 
 	done
