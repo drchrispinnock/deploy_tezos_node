@@ -76,5 +76,7 @@ while [ ! -z "$HOSTLIST" ]; do
 
 done
 
+echo "===> Running cleanup script"
+sh test_cleanup.sh
 
 
