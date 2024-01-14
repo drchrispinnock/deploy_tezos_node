@@ -63,6 +63,7 @@ usage() {
         -v ver     - version of Octez
         -r revision - package revision
         -F         - follow the installation log
+        -S         - continue even if there are no snapshots
         -W         - suppress disclaimer
 
     and
@@ -81,6 +82,7 @@ ZONE=""
 PROJECT=""
 
 FOLLOW="0"
+IGNORESNAP="no"
 
 # Initial checks
 #
@@ -107,6 +109,7 @@ while [ $# -gt 0 ]; do
         -r)     REV="$2"; shift; ;;
         -R)     RPCALLOWLIST="$2"; shift; ;;
         -s)     SNAPREG="$2"; shift; ;;
+        -S)     IGNORESNAP="yes"; ;;
         -t)     MODE="$2"; shift; ;;
         -v)     VERS="$2"; shift; ;;
         -z)     ZONE="$2" shift; ;;
@@ -130,7 +133,10 @@ PROJECTCLI="--project $PROJECT"
 # Check valid region
 #
 case $SNAPREG in
-    eu|asia|us)
+    eu)
+        ;;
+    asia|us)
+        [ "$MODE" = "archive" ] && warn "Archives on in region eu"
         ;;
     *)
         leave "Unknown region $SNAPREG";
@@ -171,6 +177,14 @@ CLIENTPKG="octez-client_${VERS}-${REV}_${ARCH}.deb"
 echo "===> Checking that packages exist"
 wget -O /dev/null $PKGSITE/$OS/$CLIENTPKG > /dev/null 2>&1
 [ "$?" != "0" ] && echo "Cannot find Octez package for ${OS} and version ${VERS}-${REV}" && exit 2
+
+if [ "$IGNORESNAP" != "yes" ]; then
+    echo "===> Checking that snapshot is available"
+    TAIL=$MODE
+    [ "$MODE" = "archive" ] && TALE=archive.tar.lz4
+    gcloud storage ls gs://tf-snapshot-${REG}/${NETWORK}/${TAIL} >/dev/null 2>&1
+    [ "$?" != "0" ] && leave "Cannot find a snapshot for $OS"
+fi
 
 echo "===> Enabling compute engine"
 gcloud services enable compute.googleapis.com ${PROJECTCLI}
