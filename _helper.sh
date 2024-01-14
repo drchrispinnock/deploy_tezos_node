@@ -2,8 +2,7 @@
 
 # I expect these on the command line and I expect to be called by
 # a deployment script - see values for $1, ... below
-
-set -eu
+# it has already checked for a snapshot.
 
 OS=debian-12
 PKGSITE=https://pkgbeta.tzinit.org
@@ -66,13 +65,13 @@ apt install -y ./$NODEPKG
 
 rm -f $CLIENTPKG $NODEPKG
 
+
 mkdir -p $NODEHOME
 chown tezos:tezos $NODEHOME
 if [ $MODE = "archive" ]; then
     echo "===> Fetching and decompressing archive"
     cd $NODEHOME
     wget -nv -O - ${SNAPSHOTURL} | lz4cat | tar xvf -
-
     chown tezos:tezos -R $NODEHOME
     cd 
 fi
