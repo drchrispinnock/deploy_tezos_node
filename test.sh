@@ -8,7 +8,7 @@ PROJECT=chris-temp-test-deploy-script
 ZONE=europe-west6-a
 NETWORKS="nairobinet oxfordnet ghostnet mainnet"
 MODES="rolling full archive"
-cleanupscript="test_cleanup.sh"
+cleanupscript="test_cleanup.$$.sh"
 
 HOSTLIST=""
 
@@ -76,6 +76,6 @@ while [ ! -z "$HOSTLIST" ]; do
 done
 
 echo "===> Running cleanup script"
-sh test_cleanup.sh
+sh $cleanupscript
 
 
