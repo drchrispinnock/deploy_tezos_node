@@ -14,6 +14,8 @@ SNAPREG="eu"
 #
 NETWORK="mainnet"
 MODE="rolling"
+RPCALLOWLIST="null"
+RPC="no"
 
 # GCP Defaults
 #
@@ -21,8 +23,6 @@ GCLOUDSITE="https://cloud.google.com/sdk/docs/install"
 MACHINE="e2-standard-4"
 OS=debian-12
 ARCH=amd64
-
-
 
 # Disc sizes (root currently unused because it is a pain to
 # deal with a second disc)
@@ -55,6 +55,7 @@ usage() {
         -z zone    - specify the GCP zone to use (mandatory) 
         -t type    - the type of node required rolling (default) or full or archive
         -n network - the Tezos network (default is mainnet)
+        -R address list - RPC allow list for firewall
         -s region  - snapshot server region: eu (default), asia or us
         -m machine - GCP profile (default is e2-standard-4)
         -d size    - Size of disc (defaults for each type)
@@ -104,6 +105,7 @@ while [ $# -gt 0 ]; do
         -o)     OS="$2"; shift; ;;
         -p)     PROJECT="$2"; shift; ;;
         -r)     REV="$2"; shift; ;;
+        -R)     RPCALLOWLIST="$2"; shift; ;;
         -s)     SNAPREG="$2"; shift; ;;
         -t)     MODE="$2"; shift; ;;
         -v)     VERS="$2"; shift; ;;
@@ -199,21 +201,32 @@ type=projects/${PROJECT}/zones/${ZONE}/diskTypes/pd-balanced \
 echo "===> Waiting gracefully for node to come up"
 sleep 30
 
+if [ "$RPCALLOWLIST" != "null" ]; then
+    echo "===> Adding firewall rule for RPC"
+    gcloud compute ${PROJECTCLI} firewall-rules create ${NAME}-rpcallowlist \
+        --direction=INGRESS --priority=1000 --network=default --action=ALLOW \
+        --rules=tcp:8732 --source-ranges="${RPCALLOWLIST}" > $TMPLOG 2>&1
+        [ "$?" != "0" ] && cat "$TMPLOG" && echo "Cannot create filewall rule (may already exist)"
+    RPC=yes
+fi
+
+
+
+echo "===> Login with:"
+echo "gcloud compute ssh ${PROJECTCLI} ${ZONECLI} ${NAME}"
+echo "===> Decommission with:"
+echo "gcloud compute instances delete --quiet ${PROJECTCLI} ${ZONECLI} ${NAME}"
+echo "gcloud compute firewall-rules delete --quiet ${NAME}-rpcallowlist ${PROJECTCLI}"
+
 echo "===> Copying and executing setup script"
 gcloud compute scp ${PROJECTCLI} ${ZONECLI} ${HELPERSCRIPT} \
             ${NAME}:/tmp/setup.sh
 
 gcloud compute ssh ${PROJECTCLI} ${ZONECLI} \
-    ${NAME} --command "nohup sudo sh /tmp/setup.sh ${NETWORK} ${MODE} ${SNAPREG} ${PKGSITE} ${OS} ${ARCH} ${VERS}-${REV} > /tmp/install.log 2>&1 &"
+    ${NAME} --command "nohup sudo sh /tmp/setup.sh ${NETWORK} ${MODE} ${RPC} ${SNAPREG} ${PKGSITE} ${OS} ${ARCH} ${VERS}-${REV} > /tmp/install.log 2>&1 &"
 
 echo "===> Script running"
 rm -f "$TMPLOG"
-
-echo "===> Login with:"
-echo "gcloud compute ssh ${PROJECTCLI} ${ZONECLI} ${NAME}"
-echo "===> Decommission with:"
-echo "gcloud compute instances destroy ${PROJECTCLI} ${ZONECLI} ${NAME}"
-
 
 if [ "$FOLLOW" = "1" ]; then
     echo "===> Following log - it is safe to CTRL-C now if you want to exit"
