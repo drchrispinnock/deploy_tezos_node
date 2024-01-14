@@ -3,30 +3,26 @@
 # Deploy a Tezos node on GCP
 #
 
-# Disclaimer
-#
-echo "WARNING: This script will bring up resources on GCP and they will cost money"
-echo "WARNING: Please make sure you understand your budget"
-echo "Ctrl-C now to exit if you are worried - you have 5 seconds"
-sleep 5
-
 # Tezos packaging and snapshotting
 #
 PKGSITE="https://pkgbeta.tzinit.org"
 VERS=19.0rc1
-REV=1 # XXX this should be tunable somewhere
+REV=1
 SNAPREG="eu"
 
 # Tezos network defaults
 #
 NETWORK="mainnet"
 MODE="rolling"
+RPCALLOWLIST="null"
+RPC="no"
 
 # GCP Defaults
 #
 GCLOUDSITE="https://cloud.google.com/sdk/docs/install"
 MACHINE="e2-standard-4"
 OS=debian-12
+ARCH=amd64
 
 # Disc sizes (root currently unused because it is a pain to
 # deal with a second disc)
@@ -40,6 +36,8 @@ DISC_SIZE="100" # Default disc size
 # External helper script to use
 #
 HELPERSCRIPT="_helper.sh"
+
+WARNTIME=10
 
 warn() {
     echo "$1" >&2
@@ -57,12 +55,16 @@ usage() {
         -z zone    - specify the GCP zone to use (mandatory) 
         -t type    - the type of node required rolling (default) or full or archive
         -n network - the Tezos network (default is mainnet)
+        -R address list - RPC allow list for firewall
         -s region  - snapshot server region: eu (default), asia or us
         -m machine - GCP profile (default is e2-standard-4)
         -d size    - Size of disc (defaults for each type)
         -o OS      - GCP name for OS (defaults to debian-12)
         -v ver     - version of Octez
+        -r revision - package revision
         -F         - follow the installation log
+        -S         - continue even if there are no snapshots
+        -W         - suppress disclaimer
 
     and
         name       - the name of the node (or we construct one)" 
@@ -80,12 +82,18 @@ ZONE=""
 PROJECT=""
 
 FOLLOW="0"
+IGNORESNAP="no"
 
 # Initial checks
 #
 which gcloud >/dev/null 2>&1
 [ "$?" != "0" ] && \
     leave "Please install gcloud from $GCLOUDSITE and log in to your GCP account"
+
+which wget > /dev/null 2>&1
+[ "$?" != "0" ] && \
+    leave "Please install wget on your machine"
+
 
 # Command-line magic
 #
@@ -98,11 +106,15 @@ while [ $# -gt 0 ]; do
         -n)     NETWORK="$2"; shift; ;;
         -o)     OS="$2"; shift; ;;
         -p)     PROJECT="$2"; shift; ;;
+        -r)     REV="$2"; shift; ;;
+        -R)     RPCALLOWLIST="$2"; shift; ;;
         -s)     SNAPREG="$2"; shift; ;;
+        -S)     IGNORESNAP="yes"; ;;
         -t)     MODE="$2"; shift; ;;
         -v)     VERS="$2"; shift; ;;
         -z)     ZONE="$2" shift; ;;
         -F)     FOLLOW=1; ;;
+        -W)     WARNTIME=0; ;;
         -*)     usage; ;;
         *)      break; # rest of args are targets
         esac
@@ -121,7 +133,10 @@ PROJECTCLI="--project $PROJECT"
 # Check valid region
 #
 case $SNAPREG in
-    eu|asia|us)
+    eu)
+        ;;
+    asia|us)
+        [ "$MODE" = "archive" ] && warn "Archives on in region eu"
         ;;
     *)
         leave "Unknown region $SNAPREG";
@@ -146,25 +161,33 @@ case $MODE in
         leave "Unknown node mode $MODE"
 esac
 
-# OS Specific stuff here
+# Disclaimer
 #
-case $OS in
-    debian-11|debian-12)
-        ;;
-    ubuntu-20|ubuntu-22)
-        ;;
-    debian-12-arm64)
-        ;;
-    *)
-        warn "$OS not supported at $PKGSITE"
-        ;;
-esac
+if [ "$WARNTIME" != "0" ]; then
+    echo "WARNING: This script will bring up resources on GCP and they will cost money"
+    echo "WARNING: Please make sure you understand your budget"
+    echo "Ctrl-C now to exit if you are worried - you have $WARNTIME seconds"
+    sleep $WARNTIME
+fi
+
+# Client package
+#
+CLIENTPKG="octez-client_${VERS}-${REV}_${ARCH}.deb" 
+
+echo "===> Checking that packages exist"
+wget -O /dev/null $PKGSITE/$OS/$CLIENTPKG > /dev/null 2>&1
+[ "$?" != "0" ] && echo "Cannot find Octez package for ${OS} and version ${VERS}-${REV}" && exit 2
+
+if [ "$IGNORESNAP" != "yes" ]; then
+    echo "===> Checking that snapshot is available"
+    TAIL=$MODE
+    [ "$MODE" = "archive" ] && TALE=archive.tar.lz4
+    gcloud storage ls gs://tf-snapshot-${REG}/${NETWORK}/${TAIL} >/dev/null 2>&1
+    [ "$?" != "0" ] && leave "Cannot find a snapshot for $NETWORK/$MODE"
+fi
 
 echo "===> Enabling compute engine"
 gcloud services enable compute.googleapis.com ${PROJECTCLI}
-
-# OS handling
-#
 
 echo "===> Finding OS image for $OS"
 IMAGE=$(gcloud compute images list | grep " $OS " | awk -F' ' '{print $1}')
@@ -192,21 +215,32 @@ type=projects/${PROJECT}/zones/${ZONE}/diskTypes/pd-balanced \
 echo "===> Waiting gracefully for node to come up"
 sleep 30
 
+if [ "$RPCALLOWLIST" != "null" ]; then
+    echo "===> Adding firewall rule for RPC"
+    gcloud compute ${PROJECTCLI} firewall-rules create ${NAME}-rpcallowlist \
+        --direction=INGRESS --priority=1000 --network=default --action=ALLOW \
+        --rules=tcp:8732 --source-ranges="${RPCALLOWLIST}" > $TMPLOG 2>&1
+        [ "$?" != "0" ] && cat "$TMPLOG" && echo "Cannot create filewall rule (may already exist)"
+    RPC=yes
+fi
+
+
+
+echo "===> Login with:"
+echo "gcloud compute ssh ${PROJECTCLI} ${ZONECLI} ${NAME}"
+echo "===> Decommission with:"
+echo "gcloud compute instances delete --quiet ${PROJECTCLI} ${ZONECLI} ${NAME}"
+echo "gcloud compute firewall-rules delete --quiet ${NAME}-rpcallowlist ${PROJECTCLI}"
+
 echo "===> Copying and executing setup script"
 gcloud compute scp ${PROJECTCLI} ${ZONECLI} ${HELPERSCRIPT} \
             ${NAME}:/tmp/setup.sh
 
 gcloud compute ssh ${PROJECTCLI} ${ZONECLI} \
-    ${NAME} --command "nohup sudo sh /tmp/setup.sh ${NETWORK} ${MODE} ${SNAPREG} ${PKGSITE} ${OS} ${VERS}-${REV} > /tmp/install.log 2>&1 &"
+    ${NAME} --command "nohup sudo sh /tmp/setup.sh ${NETWORK} ${MODE} ${RPC} ${SNAPREG} ${PKGSITE} ${OS} ${ARCH} ${VERS}-${REV} > /tmp/install.log 2>&1 &"
 
 echo "===> Script running"
 rm -f "$TMPLOG"
-
-echo "===> Login with:"
-echo "gcloud compute ssh ${PROJECTCLI} ${ZONECLI} ${NAME}"
-echo "===> Decommission with:"
-echo "gcloud compute instances destroy ${PROJECTCLI} ${ZONECLI} ${NAME}"
-
 
 if [ "$FOLLOW" = "1" ]; then
     echo "===> Following log - it is safe to CTRL-C now if you want to exit"

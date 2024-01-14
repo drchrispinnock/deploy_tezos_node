@@ -1,10 +1,8 @@
 #!/bin/sh
 
 # I expect these on the command line and I expect to be called by
-# a deployment script
-# ${NETWORK} ${MODE} ${SNAPREG} ${PKGSITE} ${OS}
-
-set -eu
+# a deployment script - see values for $1, ... below
+# it has already checked for a snapshot.
 
 OS=debian-12
 PKGSITE=https://pkgbeta.tzinit.org
@@ -12,19 +10,22 @@ SNAPREG=eu
 MODE=rolling
 NETWORK=mainnet
 TEZTNETS=https://teztnets.com
+ARCH=amd64
 VER="19.0rc1-1"
 
 NODEHOME=/var/tezos/node # XXX in later packages this will change
 
-[ ! -z "$6" ] && VER="$6" 
-[ ! -z "$5" ] && OS="$5"
-[ ! -z "$4" ] && PKGSITE="$4"
-[ ! -z "$3" ] && SNAPREG="$3"
+[ ! -z "$8" ] && VER="$8"
+[ ! -z "$7" ] && ARCH="$7" 
+[ ! -z "$6" ] && OS="$6"
+[ ! -z "$5" ] && PKGSITE="$5"
+[ ! -z "$4" ] && SNAPREG="$4"
+[ ! -z "$3" ] && RPC="$3"
 [ ! -z "$2" ] && MODE="$2"
 [ ! -z "$1" ] && NETWORK="$1"
 
-CLIENTPKG="octez-client_${VER}_amd64.deb" 
-NODEPKG="octez-node_${VER}_amd64.deb"
+CLIENTPKG="octez-client_${VER}_${ARCH}.deb" 
+NODEPKG="octez-node_${VER}_${ARCH}.deb"
 
 # Snapshot service
 #
@@ -64,23 +65,29 @@ apt install -y ./$NODEPKG
 
 rm -f $CLIENTPKG $NODEPKG
 
+
 mkdir -p $NODEHOME
 chown tezos:tezos $NODEHOME
 if [ $MODE = "archive" ]; then
     echo "===> Fetching and decompressing archive"
     cd $NODEHOME
     wget -nv -O - ${SNAPSHOTURL} | lz4cat | tar xvf -
-
     chown tezos:tezos -R $NODEHOME
     cd 
+fi
+
+
+RPCOPTIONS="--rpc-addr='127.0.0.1:8732"
+if [ "$RPC" = "yes" ]; then
+    RPCOPTIONS="--rpc-addr='0.0.0.0:8732' --allow-all-rpc='0.0.0.0:8732'" # Assumed to be firewalled - could be better
 fi
 
 echo "===> Configuring node"
 su - tezos -c "octez-node config init --data-dir ${NODEHOME} \
                         --network=${NETWORKURL} \
                         --history-mode=${MODE} \
-                        --rpc-addr='127.0.0.1:8732' \
-                        --net-addr='[::]:9732'"
+                        --net-addr='[::]:9732' \
+                        ${RPCOPTIONS}"
 
 if [ $MODE != "archive" ] ; then
     echo "===> Fetching Snapshot"
