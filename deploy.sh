@@ -183,7 +183,7 @@ if [ "$IGNORESNAP" != "yes" ]; then
     TAIL=$MODE
     [ "$MODE" = "archive" ] && TALE=archive.tar.lz4
     gcloud storage ls gs://tf-snapshot-${REG}/${NETWORK}/${TAIL} >/dev/null 2>&1
-    [ "$?" != "0" ] && leave "Cannot find a snapshot for $OS"
+    [ "$?" != "0" ] && leave "Cannot find a snapshot for $NETWORK/$MODE"
 fi
 
 echo "===> Enabling compute engine"
