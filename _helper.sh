@@ -77,7 +77,7 @@ if [ $MODE = "archive" ]; then
 fi
 
 
-RPCOPTIONS="--rpc-addr='127.0.0.1:8732"
+RPCOPTIONS="--rpc-addr='127.0.0.1:8732'"
 if [ "$RPC" = "yes" ]; then
     RPCOPTIONS="--rpc-addr='0.0.0.0:8732' --allow-all-rpc='0.0.0.0:8732'" # Assumed to be firewalled - could be better
 fi
