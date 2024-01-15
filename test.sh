@@ -19,6 +19,11 @@ export TEZOS_CLIENT_UNSAFE_DISABLE_DISCLAIMER=yes
 [ ! -z "$2" ] && NETWORKS="$2"
 [ ! -z "$3" ] && MODES="$3"
 
+# 
+#
+[ "$CLOUD" = "local" ] && echo "Don't test locally - you'll get in a mess" \
+		&& exit 0
+
 # Multicloud TM
 #
 if [ ! -f "functions_$CLOUD.sh" ]; then
