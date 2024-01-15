@@ -25,7 +25,7 @@ if [ ! -f "functions_$CLOUD.sh" ]; then
 	echo "Cloud Provider $CLOUD not supported - create functions_$CLOUD.sh"
 	exit 1
 fi
-source functions_$CLOUD.sh
+. ./functions_$CLOUD.sh
 
 # Specific test parameters
 #

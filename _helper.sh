@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# I assume a DPKG based system
+
 # I expect these on the command line and I expect to be called by
 # a deployment script - see values for $1, ... below
 # it has already checked for a snapshot.
