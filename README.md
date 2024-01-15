@@ -32,3 +32,9 @@ sh deploy.sh -c gcp -p "my-project" -z us-central1-a -s us -n mainnet -t full
 ```
 sh deploy.sh -c gcp -p "my-project" -z europe-west6-a -n mainnet -t archive
 ```
+
+4. On Debian machines, you can deploy locally. Be careful.
+
+```
+sh deploy.sh -c local -n oxfordnet -t rolling
+```
