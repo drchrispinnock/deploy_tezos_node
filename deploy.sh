@@ -15,7 +15,7 @@ SNAPREG="eu"
 NETWORK="mainnet"
 MODE="rolling"
 RPCALLOWLIST="null"
-OVERRIDERPC="no" # For local support
+OVERRIDERPC="no" # For local support which sets to "yes"
 RPC="no"
 
 # Defaults XXX will need work for other cloud providers
