@@ -15,6 +15,7 @@ SNAPREG="eu"
 NETWORK="mainnet"
 MODE="rolling"
 RPCALLOWLIST="null"
+OVERRIDERPC="no" # For local support
 RPC="no"
 
 # Defaults XXX will need work for other cloud providers
@@ -102,7 +103,7 @@ while [ $# -gt 0 ]; do
         -o)     OS="$2"; shift; ;;
         -p)     PROJECT="$2"; shift; ;;
         -r)     REV="$2"; shift; ;;
-        -R)     RPCALLOWLIST="$2"; shift; ;;
+        -R)     [ "$OVERRIDERPC" = "no" ] && RPCALLOWLIST="$2"; shift; ;;
         -s)     SNAPREG="$2"; shift; ;;
         -S)     IGNORESNAP="yes"; ;;
         -t)     MODE="$2"; shift; ;;
