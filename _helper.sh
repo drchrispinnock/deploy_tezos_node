@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# I assume a DPKG based system
+
 # I expect these on the command line and I expect to be called by
 # a deployment script - see values for $1, ... below
 # it has already checked for a snapshot.
@@ -65,7 +67,6 @@ apt install -y ./$NODEPKG
 
 rm -f $CLIENTPKG $NODEPKG
 
-
 mkdir -p $NODEHOME
 chown tezos:tezos $NODEHOME
 if [ $MODE = "archive" ]; then
@@ -100,10 +101,11 @@ if [ $MODE != "archive" ] ; then
     fi
 fi
 
-echo "===> Enabling services"
+echo "===> Enabling and starting services"
 systemctl enable octez-node
+systemctl start octez-node
 
-echo "===> Rebooting to clean and start"
-shutdown -r now
+#echo "===> Rebooting to clean and start"
+#shutdown -r now
 
 

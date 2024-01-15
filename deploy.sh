@@ -74,8 +74,8 @@ usage() {
 
 # Setup
 #
-ZONE=""
-PROJECT=""
+ZONE="___notset___"
+PROJECT="___notset___"
 
 FOLLOW="0"
 IGNORESNAP="no"
@@ -130,8 +130,8 @@ NAME="tezos-node-$NETWORK-$MODE"
 [ ! -z "$1" ] && NAME="$1"
 
 if [ "$PNZMANDATORY" = "yes" ]; then
-	[ -z "$ZONE" ] && leave "Zone must be specified with -z for $CLOUDPROVIDER"
-	[ -p "$PROJECT" ] && leave "Project must be specified with -p for $CLOUDPROVIDER"
+	[ "$ZONE" = "___notset___" ] && leave "Zone must be specified with -z for $CLOUDPROVIDER"
+	[ "$PROJECT" = "___notset___" ] && leave "Project must be specified with -p for $CLOUDPROVIDER"
 fi
 
 # Check valid region
@@ -190,28 +190,22 @@ if [ "$IGNORESNAP" != "yes" ]; then
     [ "$?" != "0" ] && leave "Cannot find a snapshot for $NETWORK/$MODE"
 fi
 
-echo "===> Enabling compute engine"
 enable_compute $PROJECT;
 
-echo "===> Finding OS image for $OS"
 IMAGE=$(findosimage $OS)
-echo ${IMAGE}
 
 echo "===> Setting up Node $NAME ($NETWORK/$MODE)"
 create_vm $NAME $PROJECT $ZONE $MACHINE $IMAGE $DISC_SIZE
 
-echo "===> Waiting gracefully for node to come up"
-sleep 30
+wait_gracefully
 
 if [ "$RPCALLOWLIST" != "null" ]; then
-    echo "===> Adding firewall rule for RPC"
     create_firewall $NAME $PROJECT $RPCALLOWLIST
     RPC=yes
 fi
 
 print_ssh_details $PROJECT $ZONE $NAME
 
-echo "===> Copying and executing setup script"
 copy_and_exec $PROJECT $ZONE $HELPERSCRIPT $NAME "${NETWORK} ${MODE} ${RPC} ${SNAPREG} ${PKGSITE} ${OS} ${ARCH} ${VERS}-${REV}"
 
 echo "===> Script running"
