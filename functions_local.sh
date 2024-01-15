@@ -57,7 +57,6 @@ enable_compute() {
 
 findosimage() {
     # Usage: findosimage OS
-    uname -s
 }
 
 create_vm() {

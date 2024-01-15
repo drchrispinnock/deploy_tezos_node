@@ -20,7 +20,6 @@ enable_compute() {
 findosimage() {
     # Usage: findosimage OS
     P=$1
-    echo "===> Finding OS image for $P"
     IMAGE=$(gcloud compute images list | grep " $P " | awk -F' ' '{print $1}')
     [ "$?" != "0" ] && leave "Cannot find a OS image for $P"
     echo $IMAGE
@@ -36,8 +35,7 @@ create_vm() {
         --maintenance-policy=MIGRATE \
         --provisioning-model=STANDARD \
         --scopes=https://www.googleapis.com/auth/cloud-platform \
-        --create-disk=auto-delete=yes,boot=yes,device-name=$1,image=projects/debian-cloud/global/images/$5,mode=rw,size=$6,\
-type=projects/$2/zones/$3/diskTypes/pd-balanced \
+        --create-disk=auto-delete=yes,boot=yes,device-name=$1,image=projects/debian-cloud/global/images/$5,mode=rw,size=$6,type=projects/$2/zones/$3/diskTypes/pd-balanced \
         --no-shielded-secure-boot \
         --shielded-vtpm \
         --shielded-integrity-monitoring \
