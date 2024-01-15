@@ -192,7 +192,7 @@ fi
 
 enable_compute $PROJECT;
 
-echo "===> Finding OS image for $P"
+echo "===> Finding OS image for $OS"
 IMAGE=$(findosimage $OS)
 
 echo "===> Setting up Node $NAME ($NETWORK/$MODE)"
