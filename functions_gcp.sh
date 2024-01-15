@@ -2,6 +2,7 @@
 #
 GCP_CLOUDSITE="https://cloud.google.com/sdk/docs/install"
 MACHINE="e2-standard-4"
+PNZMANDATORY=yes
 
 software_checks() {
     # None
@@ -12,12 +13,14 @@ software_checks() {
 enable_compute() {
     # Usage: enable_compute PROJECT
     #
+    echo "===> Enabling compute engine"
     gcloud services enable compute.googleapis.com --project=$1
 }
 
 findosimage() {
     # Usage: findosimage OS
     P=$1
+    echo "===> Finding OS image for $P"
     IMAGE=$(gcloud compute images list | grep " $P " | awk -F' ' '{print $1}')
     [ "$?" != "0" ] && leave "Cannot find a OS image for $P"
     echo $IMAGE
@@ -44,7 +47,14 @@ type=projects/$2/zones/$3/diskTypes/pd-balanced \
     rm -f ${TMPLOG}
 }
 
+wait_gracefully() {
+	echo "===> Waiting gracefully for node to come up"
+	sleep 30
+}
+
+
 create_firewall() {
+	echo "===> Adding firewall rule for RPC"
     TMPLOG=`mktemp /tmp/_deployXXXXXX`
     gcloud compute firewall-rules create $1-rpcallowlist  --project=$2 \
         --direction=INGRESS --priority=1000 --network=default --action=ALLOW \
@@ -76,6 +86,7 @@ copy_and_exec() {
     N=$4
     CLI=$5
 
+	echo "===> Copying and executing setup script"	
     gcloud compute scp --project=$P --zone=$Z $H \
             ${N}:/tmp/setup.sh
 

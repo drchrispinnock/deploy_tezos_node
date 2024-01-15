@@ -15,6 +15,7 @@ SNAPREG="eu"
 NETWORK="mainnet"
 MODE="rolling"
 RPCALLOWLIST="null"
+OVERRIDERPC="no" # For local support which sets to "yes"
 RPC="no"
 
 # Defaults XXX will need work for other cloud providers
@@ -22,6 +23,7 @@ RPC="no"
 OS=debian-12
 ARCH=amd64
 CLOUDPROVIDER=gcp
+PNZMANDATORY=yes
 
 # Disc sizes (root currently unused because it is a pain to
 # deal with a second disc)
@@ -72,8 +74,8 @@ usage() {
 
 # Setup
 #
-ZONE=""
-PROJECT=""
+ZONE="___notset___"
+PROJECT="___notset___"
 
 FOLLOW="0"
 IGNORESNAP="no"
@@ -101,7 +103,7 @@ while [ $# -gt 0 ]; do
         -o)     OS="$2"; shift; ;;
         -p)     PROJECT="$2"; shift; ;;
         -r)     REV="$2"; shift; ;;
-        -R)     RPCALLOWLIST="$2"; shift; ;;
+        -R)     [ "$OVERRIDERPC" = "no" ] && RPCALLOWLIST="$2"; shift; ;;
         -s)     SNAPREG="$2"; shift; ;;
         -S)     IGNORESNAP="yes"; ;;
         -t)     MODE="$2"; shift; ;;
@@ -120,15 +122,17 @@ done
 # Cloud Provider specific functions
 #
 [ ! -f "functions_$CLOUDPROVIDER.sh" ] && leave "Cloud provider $CLOUDPROVIDER not supported"
-source "functions_$CLOUDPROVIDER.sh"
+. ./functions_$CLOUDPROVIDER.sh
 
 software_checks;
 
 NAME="tezos-node-$NETWORK-$MODE"
 [ ! -z "$1" ] && NAME="$1"
 
-[ -z "$ZONE" ] && leave "Zone must be specified with -z"
-[ -p "$PROJECT" ] && leave "Project must be specified with -p"
+if [ "$PNZMANDATORY" = "yes" ]; then
+	[ "$ZONE" = "___notset___" ] && leave "Zone must be specified with -z for $CLOUDPROVIDER"
+	[ "$PROJECT" = "___notset___" ] && leave "Project must be specified with -p for $CLOUDPROVIDER"
+fi
 
 # Check valid region
 #
@@ -186,28 +190,22 @@ if [ "$IGNORESNAP" != "yes" ]; then
     [ "$?" != "0" ] && leave "Cannot find a snapshot for $NETWORK/$MODE"
 fi
 
-echo "===> Enabling compute engine"
 enable_compute $PROJECT;
 
-echo "===> Finding OS image for $OS"
 IMAGE=$(findosimage $OS)
-echo ${IMAGE}
 
 echo "===> Setting up Node $NAME ($NETWORK/$MODE)"
 create_vm $NAME $PROJECT $ZONE $MACHINE $IMAGE $DISC_SIZE
 
-echo "===> Waiting gracefully for node to come up"
-sleep 30
+wait_gracefully
 
 if [ "$RPCALLOWLIST" != "null" ]; then
-    echo "===> Adding firewall rule for RPC"
     create_firewall $NAME $PROJECT $RPCALLOWLIST
     RPC=yes
 fi
 
 print_ssh_details $PROJECT $ZONE $NAME
 
-echo "===> Copying and executing setup script"
 copy_and_exec $PROJECT $ZONE $HELPERSCRIPT $NAME "${NETWORK} ${MODE} ${RPC} ${SNAPREG} ${PKGSITE} ${OS} ${ARCH} ${VERS}-${REV}"
 
 echo "===> Script running"
