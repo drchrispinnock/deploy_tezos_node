@@ -22,6 +22,7 @@ RPC="no"
 OS=debian-12
 ARCH=amd64
 CLOUDPROVIDER=gcp
+PNZMANDATORY=yes
 
 # Disc sizes (root currently unused because it is a pain to
 # deal with a second disc)
@@ -127,8 +128,10 @@ software_checks;
 NAME="tezos-node-$NETWORK-$MODE"
 [ ! -z "$1" ] && NAME="$1"
 
-[ -z "$ZONE" ] && leave "Zone must be specified with -z"
-[ -p "$PROJECT" ] && leave "Project must be specified with -p"
+if [ "$PNZMANDATORY" = "yes" ]; then
+	[ -z "$ZONE" ] && leave "Zone must be specified with -z for $CLOUDPROVIDER"
+	[ -p "$PROJECT" ] && leave "Project must be specified with -p for $CLOUDPROVIDER"
+fi
 
 # Check valid region
 #

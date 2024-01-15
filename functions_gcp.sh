@@ -2,6 +2,7 @@
 #
 GCP_CLOUDSITE="https://cloud.google.com/sdk/docs/install"
 MACHINE="e2-standard-4"
+PNZMANDATORY=yes
 
 software_checks() {
     # None
