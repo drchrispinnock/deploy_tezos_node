@@ -122,7 +122,7 @@ done
 # Cloud Provider specific functions
 #
 [ ! -f "functions_$CLOUDPROVIDER.sh" ] && leave "Cloud provider $CLOUDPROVIDER not supported"
-source "functions_$CLOUDPROVIDER.sh"
+. ./functions_$CLOUDPROVIDER.sh
 
 software_checks;
 
