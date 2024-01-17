@@ -88,8 +88,6 @@ copy_and_exec() {
 }
 
 getip() {
-	# XXX
-
 	true
 }
 

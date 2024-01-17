@@ -10,6 +10,25 @@ The relevant cloud tools should be installed on your machine and ```wget```.
 It's recommended to have the ```gcloud``` tools as it is the easiest way to
 check the snapshot files exist before proceeding.
 
+## Cost caveats
+
+This script brings up resources on cloud platforms. Plan your cost!
+Tweak the scripts if necessary. The costs below do not include any
+data download costs.
+
+### GCP
+
+On GCP, we use the e2-standard-4 compute class. At the time of writing
+(17th January) and assuming the default values used in the script, the
+cost estimates per month are:
+
+
+|         |  disc (GB) | us-central1 | europe-west6 |
+|---------|------------|-------------|--------------|
+| rolling | 100        | $102        | $142         |
+| full	  | 300        | $110        | $153         |
+| archive | 2000       | $178        | $241         |
+
 ## Examples
 
 1. Deploy a rolling node on mainnet in GCP in europe-west6-a
