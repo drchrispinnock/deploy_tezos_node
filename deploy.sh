@@ -6,7 +6,7 @@
 # Tezos packaging and snapshotting
 #
 PKGSITE="https://pkgbeta.tzinit.org"
-VERS=19.0rc1
+VERS=19.0
 REV=1
 SNAPREG="eu"
 
