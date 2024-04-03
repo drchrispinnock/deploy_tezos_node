@@ -13,9 +13,9 @@ MODE=rolling
 NETWORK=mainnet
 TEZTNETS=https://teztnets.com
 ARCH=amd64
-VER="19.0rc1-1"
+VER="19.0-1"
 
-NODEHOME=/var/tezos/node # XXX in later packages this will change
+NODEHOME=/var/tezos/.tezos-node # XXX in later packages this will change
 
 [ ! -z "$8" ] && VER="$8"
 [ ! -z "$7" ] && ARCH="$7" 
@@ -55,7 +55,7 @@ echo "Snapshot:    $SNAPSHOTURL"
 echo "===> Upgrading OS"
 apt update
 apt upgrade -y
-apt install -y lz4
+apt install -y lz4 tmux
 
 echo "===> Fetching Octez"
 wget $PKGSITE/$OS/$CLIENTPKG
