@@ -28,6 +28,7 @@ NODEHOME=/var/tezos/.tezos-node # XXX in later packages this will change
 
 CLIENTPKG="octez-client_${VER}_${ARCH}.deb" 
 NODEPKG="octez-node_${VER}_${ARCH}.deb"
+BKRPKG="octez-baker${VER}_${ARCH}.deb"
 
 # Snapshot service
 #
@@ -60,12 +61,14 @@ apt install -y lz4 tmux
 echo "===> Fetching Octez"
 wget $PKGSITE/$OS/$CLIENTPKG
 wget $PKGSITE/$OS/$NODEPKG
+wget $PKGSITE/$OS/$BKRPKG
 
 echo "===> Installing Octez"
 apt install -y ./$CLIENTPKG
 apt install -y ./$NODEPKG
+apt install -y ./$BKRPKG
 
-rm -f $CLIENTPKG $NODEPKG
+rm -f $CLIENTPKG $BKRPKG $NODEPKG
 
 mkdir -p $NODEHOME
 chown tezos:tezos $NODEHOME
