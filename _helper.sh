@@ -13,10 +13,12 @@ MODE=rolling
 NETWORK=mainnet
 TEZTNETS=https://teztnets.com
 ARCH=amd64
-VER="19.0-1"
+VER="23.3-1"
+BAKE=0
 
 NODEHOME=/var/tezos/.tezos-node # XXX in later packages this will change
 
+[ ! -z "$9" ] && BAKE="$9"
 [ ! -z "$8" ] && VER="$8"
 [ ! -z "$7" ] && ARCH="$7" 
 [ ! -z "$6" ] && OS="$6"
@@ -26,9 +28,10 @@ NODEHOME=/var/tezos/.tezos-node # XXX in later packages this will change
 [ ! -z "$2" ] && MODE="$2"
 [ ! -z "$1" ] && NETWORK="$1"
 
-CLIENTPKG="octez-client_${VER}_${ARCH}.deb" 
-NODEPKG="octez-node_${VER}_${ARCH}.deb"
-BKRPKG="octez-baker${VER}_${ARCH}.deb"
+CLIENTPKG="octez-unoff-client_${VER}_${ARCH}.deb" 
+NODEPKG="octez-unoff-node_${VER}_${ARCH}.deb"
+BKRPKG="octez-unoff-baker_${VER}_${ARCH}.deb"
+DALPKG="octez-unoff-dalnode_${VER}_${ARCH}.deb"
 
 # Snapshot service
 #
@@ -62,13 +65,15 @@ echo "===> Fetching Octez"
 wget $PKGSITE/$OS/$CLIENTPKG
 wget $PKGSITE/$OS/$NODEPKG
 wget $PKGSITE/$OS/$BKRPKG
+wget $PKGSITE/$OS/$DALPKG
 
 echo "===> Installing Octez"
 apt install -y ./$CLIENTPKG
 apt install -y ./$NODEPKG
 apt install -y ./$BKRPKG
+apt install -y ./$DALPKG
 
-rm -f $CLIENTPKG $BKRPKG $NODEPKG
+rm -f $CLIENTPKG $BKRPKG $NODEPKG $DALPKG
 
 mkdir -p $NODEHOME
 chown tezos:tezos $NODEHOME

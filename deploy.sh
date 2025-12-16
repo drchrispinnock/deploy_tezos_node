@@ -6,7 +6,7 @@
 # Tezos packaging and snapshotting
 #
 PKGSITE="https://pkgbeta.tzinit.org"
-VERS=19.0
+VERS=23.3
 REV=1
 SNAPREG="eu"
 
@@ -176,7 +176,7 @@ fi
 
 # Client package
 #
-CLIENTPKG="octez-client_${VERS}-${REV}_${ARCH}.deb" 
+CLIENTPKG="octez-unoff-client_${VERS}-${REV}_${ARCH}.deb" 
 
 echo "===> Checking that packages exist"
 wget -O /dev/null $PKGSITE/$OS/$CLIENTPKG > /dev/null 2>&1

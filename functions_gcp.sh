@@ -47,7 +47,7 @@ create_vm() {
 
 wait_gracefully() {
 	echo "===> Waiting gracefully for node to come up"
-	sleep 30
+	sleep 60
 }
 
 
