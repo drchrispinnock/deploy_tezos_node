@@ -31,6 +31,7 @@ PNZMANDATORY=yes
 DISC_ROOT="20"
 DISC_ROLLING="200"
 DISC_FULL="800"
+DISC_FULL50="1200"
 DISC_ARCHIVE="5000"
 DISC_SIZE=""
 
@@ -126,7 +127,10 @@ done
 
 software_checks;
 
-NAME="tezos-node-$NETWORK-$MODE"
+FRMODE=${MODE}
+[ "$MODE" = "full:50" ] && FRMODE="full50" 
+
+NAME="tezos-node-$NETWORK-$FRMODE"
 [ ! -z "$1" ] && NAME="$1"
 
 if [ "$PNZMANDATORY" = "yes" ]; then
@@ -155,6 +159,10 @@ case $MODE in
 
     full)
         DISC_SIZE=${DISC_FULL};
+        ;;
+    
+    full:50)
+        DISC_SIZE=${DISC_FULL50};
         ;;
 
     archive)
@@ -188,6 +196,7 @@ if [ "$IGNORESNAP" != "yes" ]; then
     echo "===> Checking that snapshot is available"
     TAIL=$MODE
     [ "$MODE" = "archive" ] && TAIL=archive.tar.lz4
+    [ "$MODE" = "full:50" ] && TAIL=full50.tar.lz4
     gcloud storage ls gs://tf-snapshot-${SNAPREG}/${NETWORK}/${TAIL}
     [ "$?" != "0" ] && leave "Cannot find a snapshot for $NETWORK/$MODE"
 fi
