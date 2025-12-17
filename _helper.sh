@@ -31,7 +31,7 @@ NODEHOME=/var/tezos/.tezos-node # XXX in later packages this will change
 CLIENTPKG="octez-unoff-client_${VER}_${ARCH}.deb" 
 NODEPKG="octez-unoff-node_${VER}_${ARCH}.deb"
 BKRPKG="octez-unoff-baker_${VER}_${ARCH}.deb"
-DALPKG="octez-unoff-dalnode_${VER}_${ARCH}.deb"
+DALPKG="octez-unoff-dal-node_${VER}_${ARCH}.deb"
 
 # Snapshot service
 #
