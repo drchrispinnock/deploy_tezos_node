@@ -32,7 +32,7 @@ DISC_ROOT="20"
 DISC_ROLLING="200"
 DISC_FULL="800"
 DISC_ARCHIVE="5000"
-DISC_SIZE="100" # Default disc size
+DISC_SIZE=""
 
 # External helper script to use
 #
@@ -96,7 +96,7 @@ which wget > /dev/null 2>&1
 #
 while [ $# -gt 0 ]; do
         case $1 in
-        -d)     DISC_SIZE="$2"; shift ;;
+        -d)     _DISC_SIZE="$2"; shift ;;
         -C)     CLOUDPROVIDER="$2"; shift ;;
         -m)     MACHINE="$2"; shift; ;;
         -n)     NETWORK="$2"; shift; ;;
@@ -164,6 +164,8 @@ case $MODE in
     *)
         leave "Unknown node mode $MODE"
 esac
+
+[ -n "${_DISC_SIZE}" ] && DISC_SIZE=${_DISC_SIZE}
 
 # Disclaimer
 #
