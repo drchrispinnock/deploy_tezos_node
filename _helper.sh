@@ -37,8 +37,14 @@ DALPKG="octez-unoff-dal-node_${VER}_${ARCH}.deb"
 #
 SNAPSHOTURL="https://snapshot.$SNAPREG.tzinit.org/$NETWORK/$MODE"
 
+FRMODE="$MODE"
+[ "$MODE" = "full:50" ] && $FRMODE="full50"
+
 [ "$MODE" = "archive" ] && \
     SNAPSHOTURL="https://snapshot.$SNAPREG.tzinit.org/$NETWORK/archive.tar.lz4"
+
+[ "$MODE" = "full:50" ] && \
+    SNAPSHOTURL="https://snapshot.$SNAPREG.tzinit.org/$NETWORK/full50.tar.lz4"
 
 # Network URL
 #
@@ -77,7 +83,7 @@ rm -f $CLIENTPKG $BKRPKG $NODEPKG $DALPKG
 
 mkdir -p $NODEHOME
 chown tezos:tezos $NODEHOME
-if [ $MODE = "archive" ]; then
+if [ $MODE = "archive" ] || [ "$MODE" = "full:50" ]; then
     echo "===> Fetching and decompressing archive"
     cd $NODEHOME
     wget -nv -O - ${SNAPSHOTURL} | lz4cat | tar xvf -
@@ -98,7 +104,7 @@ su - tezos -c "octez-node config init --data-dir ${NODEHOME} \
                         --net-addr='[::]:9732' \
                         ${RPCOPTIONS}"
 
-if [ $MODE != "archive" ] ; then
+if [ $MODE = "full" ] || [ $MODE = "rolling" ] ; then
     echo "===> Fetching Snapshot"
     wget -nv ${SNAPSHOTURL} -O /var/tezos/__snapshot
     su - tezos -c "octez-node snapshot import /var/tezos/__snapshot --data-dir $NODEHOME"
