@@ -29,9 +29,9 @@ PNZMANDATORY=yes
 # deal with a second disc)
 #
 DISC_ROOT="20"
-DISC_ROLLING="100"
-DISC_FULL="300"
-DISC_ARCHIVE="2000"
+DISC_ROLLING="200"
+DISC_FULL="800"
+DISC_ARCHIVE="5000"
 DISC_SIZE="100" # Default disc size
 
 # External helper script to use
