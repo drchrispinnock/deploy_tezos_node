@@ -53,10 +53,10 @@ leave() {
 usage() {
     leave "Usage: $0 -p project -z zone [...options...] [name]
     where options are:
-        -C         - Cloud Provider - gcp (default) aws, ...)
+        -C         - Cloud Provider - gcp (default) - only gcp currently.
         -p project - specify the project to use (mandatory)
         -z zone    - specify the zone to use (mandatory) 
-        -t type    - the type of node required rolling (default) or full or archive
+        -t type    - the type of node required rolling (default), full:50, full or archive
         -n network - the Tezos network (default is mainnet)
         -R address list - RPC allow list for firewall
         -s region  - snapshot server region: eu (default), asia or us
